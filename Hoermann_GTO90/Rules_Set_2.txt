@@ -1,0 +1,64 @@
+On command do
+ TaskValueSet 9,1,%eventvalue%+1
+ TaskValueSet 9,2,5
+ TaskValueSet 9,3,3
+ Event commandstep
+endon
+
+On Rules#Timer=1 do
+ Event commandstep
+endon
+
+On commandstep do
+ if [input#rels]=3
+  Publish %sysname%/Error,"Aborting rels == 3" 
+  TaskValueSet 9,1,0
+ endif
+
+ if [control#mode]=2 and [end_up#State]=1
+   TaskValueSet 9,1,0
+ endif
+ if [control#mode]=3 and [end_dn#State]=1
+   TaskValueSet 9,1,0
+ endif
+
+ if [control#mode]=1 and [input#rels]!=0 and [input#rels]!=3
+  Pulse,15,1,600
+  TaskValueSet 9,2,[control#attempts]-1
+ endif
+ if [control#mode]=1 and [input#rels]=0
+  TaskValueSet 9,3,[control#timeout]-1
+ endif
+
+if [control#mode]=2 and [input#rels]!=1 and [input#rels]!=3
+  Pulse,15,1,600
+  TaskValueSet 9,2,[control#attempts]-1
+ endif
+ if [control#mode]=2 and [input#rels]=1
+  TaskValueSet 9,3,[control#timeout]-1
+ endif
+
+ if [control#mode]=3 and [input#rels]!=2 and [input#rels]!=3
+  Pulse,15,1,600
+  TaskValueSet 9,2,[control#attempts]-1
+ endif
+ if [control#mode]=3 and [input#rels]=2
+  TaskValueSet 9,3,[control#timeout]-1
+ endif
+
+
+ if [control#timeout]=0
+  TaskValueSet 9,1,0
+  Publish %sysname%/Success,"Finished"
+ endif
+ if [control#attempts]=0
+  TaskValueSet 9,1,0
+  Publish %sysname%/Error,"Ran out of attempts"
+ endif
+ 
+  if [control#mode]!=0 and[control#timeout]!=0 and [control#attempts]!=0
+  timerSet,1,2
+ endif
+
+ TaskRun 9
+endon

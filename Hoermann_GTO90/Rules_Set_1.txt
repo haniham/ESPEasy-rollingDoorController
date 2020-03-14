@@ -1,0 +1,83 @@
+on end_up#State do
+ Event,calcsw
+endon
+on end_dn#State do
+ Event,calcsw
+endon
+on calcsw do
+ TaskValueSet 7,3,[end_dn#State]*2+[end_up#State]
+ Event,calcrels
+endon
+
+on mov_up_or_end#State do
+  Event,calcrels 
+endon
+on mov_dn_or_end#State do
+  Event,calcrels
+endon
+
+
+on calcrels do
+ if [mov_up_or_end#State]=1 and [end_up#State]=0
+  TaskValueSet 7,1,1
+ else
+  TaskValueSet 7,1,0
+ endif
+ if [mov_dn_or_end#State]=1 and [end_dn#State]=0
+  TaskValueSet 7,2,1
+ else
+  TaskValueSet 7,2,0
+ endif
+ TaskValueSet 7,4,[input#rel_dn]*2+[input#rel_up]
+ TaskRun,7
+endon
+
+on input#rels do
+ Publish %sysname%/event,Firstzhgjf
+ if [states#contr]=0
+  Event,checkinit
+ endif
+endon
+
+on checkinit do
+ Publish %sysname%/event,First
+ if[input#rels]=1
+  TaskValueSet 8,1,1
+ endif
+ if[input#rels]=2
+  TaskValueSet 8,1,3
+ endif
+endon
+
+on counter#Count do
+  Publish %sysname%/event,count[states#ticks]-[counter#Count]
+ if [input#rels]=1
+  TaskValueSet 8,2,[states#ticks]-[counter#Count]
+ endif
+ if [input#rels]=2
+  TaskValueSet 8,2,[states#ticks]+[counter#Count]
+ endif
+ if [input#ends]=1 do
+  TaskValueSet 8,2,0
+ endif
+endon
+
+on impulse#State do
+ if [input#rels]=1
+  TaskValueSet 8,2,[states#ticks]-1
+ endif
+ if [input#rels]=2
+  TaskValueSet 8,2,[states#ticks]+1
+ endif
+ TaskValueSet 8,3,[states#ticks]/177*100
+endon
+
+on input#ends=1 do
+ TaskValueSet 8,2,0
+ TaskValueSet 8,3,[states#ticks]/177*100
+endon
+
+on input#ends=2 do
+ TaskValueSet 8,2,177
+ TaskValueSet 8,3,[states#ticks]/177*100
+endon
